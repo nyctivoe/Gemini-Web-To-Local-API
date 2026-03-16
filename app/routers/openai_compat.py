@@ -1,6 +1,7 @@
 import json
 import uuid
 from fastapi import APIRouter, HTTPException, Request
+from fastapi.responses import StreamingResponse
 from loguru import logger
 
 from app.schemas import OpenAIChatRequest, OpenAITool
@@ -128,11 +129,51 @@ def _parse_tool_calls(text: str) -> list[dict] | None:
 
 @router.post("/chat/completions")
 async def openai_chat_completions(req: OpenAIChatRequest, request: Request):
-    """OpenAI-compatible chat completions endpoint with tool calling support."""
+    """OpenAI-compatible chat completions endpoint with tool calling and streaming support."""
     provider = _get_provider(request)
 
     prompt = _format_messages(req)
 
+    # Tool calls need full response to parse JSON — force non-streaming
+    if req.stream and not req.tools:
+        async def event_generator():
+            try:
+                async for text_chunk in provider.generate_stream(prompt, req.model):
+                    chunk = {
+                        "object": "chat.completion.chunk",
+                        "model": req.model,
+                        "choices": [
+                            {
+                                "index": 0,
+                                "delta": {"content": text_chunk},
+                                "finish_reason": None,
+                            }
+                        ],
+                    }
+                    yield f"data: {json.dumps(chunk)}\n\n"
+            except Exception as e:
+                logger.error(f"OpenAI-compat stream error: {e}")
+                error_chunk = {"error": {"message": str(e)}}
+                yield f"data: {json.dumps(error_chunk)}\n\n"
+
+            # Final chunk with finish_reason
+            final = {
+                "object": "chat.completion.chunk",
+                "model": req.model,
+                "choices": [
+                    {
+                        "index": 0,
+                        "delta": {},
+                        "finish_reason": "stop",
+                    }
+                ],
+            }
+            yield f"data: {json.dumps(final)}\n\n"
+            yield "data: [DONE]\n\n"
+
+        return StreamingResponse(event_generator(), media_type="text/event-stream")
+
+    # Non-streaming path (also used when tools are provided)
     try:
         text = await provider.generate(prompt, req.model)
     except Exception as e:

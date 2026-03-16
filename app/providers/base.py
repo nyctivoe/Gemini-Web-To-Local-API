@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from collections.abc import AsyncIterator
 
 
 class BaseProvider(ABC):
@@ -18,9 +19,21 @@ class BaseProvider(ABC):
         ...
 
     @abstractmethod
+    async def generate_stream(self, message: str, model: str) -> AsyncIterator[str]:
+        """Stateless generation, yields text chunks."""
+        ...
+        yield  # pragma: no cover — makes this a valid abstract async generator
+
+    @abstractmethod
     async def chat(self, message: str, model: str, session_id: str = "default") -> str:
         """Stateful multi-turn chat (session persists across calls)."""
         ...
+
+    @abstractmethod
+    async def chat_stream(self, message: str, model: str, session_id: str = "default") -> AsyncIterator[str]:
+        """Stateful chat, yields text chunks."""
+        ...
+        yield  # pragma: no cover
 
     def list_sessions(self) -> list[dict]:
         return []

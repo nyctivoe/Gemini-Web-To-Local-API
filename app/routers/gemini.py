@@ -1,4 +1,6 @@
+import json
 from fastapi import APIRouter, HTTPException, Request
+from fastapi.responses import StreamingResponse
 from loguru import logger
 from pydantic import BaseModel
 
@@ -14,10 +16,23 @@ def _get_provider(request: Request):
     return provider
 
 
-@router.post("", response_model=GeminiResponse)
+@router.post("")
 async def gemini_generate(req: GeminiRequest, request: Request):
     """Stateless single-turn generation."""
     provider = _get_provider(request)
+
+    if req.stream:
+        async def event_generator():
+            try:
+                async for chunk in provider.generate_stream(req.message, req.model):
+                    yield f"data: {json.dumps({'chunk': chunk})}\n\n"
+            except Exception as e:
+                logger.error(f"Gemini generate stream error: {e}")
+                yield f"data: {json.dumps({'error': str(e)})}\n\n"
+            yield "data: [DONE]\n\n"
+
+        return StreamingResponse(event_generator(), media_type="text/event-stream")
+
     try:
         text = await provider.generate(req.message, req.model)
         return GeminiResponse(response=text)
@@ -26,10 +41,23 @@ async def gemini_generate(req: GeminiRequest, request: Request):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/chat", response_model=GeminiResponse)
+@router.post("/chat")
 async def gemini_chat(req: GeminiRequest, request: Request):
     """Stateful multi-turn chat (session persists across requests)."""
     provider = _get_provider(request)
+
+    if req.stream:
+        async def event_generator():
+            try:
+                async for chunk in provider.chat_stream(req.message, req.model, req.session_id):
+                    yield f"data: {json.dumps({'chunk': chunk})}\n\n"
+            except Exception as e:
+                logger.error(f"Gemini chat stream error: {e}")
+                yield f"data: {json.dumps({'error': str(e)})}\n\n"
+            yield "data: [DONE]\n\n"
+
+        return StreamingResponse(event_generator(), media_type="text/event-stream")
+
     try:
         text = await provider.chat(req.message, req.model, req.session_id)
         return GeminiResponse(response=text)

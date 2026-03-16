@@ -5,6 +5,7 @@ class GeminiRequest(BaseModel):
     message: str
     model: str = "gemini-3.1-pro"
     session_id: str = "default"
+    stream: bool = True
 
 
 class GeminiResponse(BaseModel):
@@ -32,7 +33,7 @@ class OpenAIMessage(BaseModel):
 class OpenAIChatRequest(BaseModel):
     messages: list[OpenAIMessage]
     model: str = "gemini-3.1-pro"
-    stream: bool = False
+    stream: bool = True
     tools: list[OpenAITool] | None = None
     tool_choice: str | dict | None = None
 
