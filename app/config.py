@@ -31,5 +31,13 @@ class GeminiCookies:
         return bool(cls.PSID and cls.PSIDTS)
 
 
+class AuthConfig:
+    api_key: str = _get("API_KEY")
+
+    @classmethod
+    def is_enabled(cls) -> bool:
+        return bool(cls.api_key)
+
+
 class ProxyConfig:
     url: str = _get("PROXY_URL")

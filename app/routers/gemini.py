@@ -1,12 +1,13 @@
 import json
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import StreamingResponse
 from loguru import logger
 from pydantic import BaseModel
 
+from app.auth import verify_api_key
 from app.schemas import GeminiRequest, GeminiResponse
 
-router = APIRouter(prefix="/gemini", tags=["gemini"])
+router = APIRouter(prefix="/gemini", tags=["gemini"], dependencies=[Depends(verify_api_key)])
 
 
 def _get_provider(request: Request):
