@@ -1,3 +1,6 @@
+# Environment variables (contains secrets)
+.env
+
 # Virtual environment
 .venv/
 
@@ -6,9 +9,6 @@ __pycache__/
 **/__pycache__/
 *.pyc
 *.pyo
-
-# Config with real cookies
-config.conf
 
 # Claude Code
 .claude/

@@ -13,18 +13,18 @@ uv pip install -r requirements.txt
 
 ### 2. Configure cookies
 
-Copy the example config:
+Copy the example env file:
 
 ```bash
-cp example.config.conf config.conf
+cp .env.example .env
 ```
 
 Get your cookies from Chrome:
 
 1. Go to [gemini.google.com](https://gemini.google.com) (make sure you're logged in)
 2. Press `F12` → **Application** tab → **Cookies** → `https://gemini.google.com`
-3. Copy `__Secure-1PSID` → paste as `PSID` in `config.conf`
-4. Copy `__Secure-1PSIDTS` → paste as `PSIDTS` in `config.conf`
+3. Copy `__Secure-1PSID` → paste as `GEMINI_PSID` in `.env`
+4. Copy `__Secure-1PSIDTS` → paste as `GEMINI_PSIDTS` in `.env`
 
 ### 3. Run
 
@@ -94,13 +94,25 @@ Drop-in replacement for OpenAI's chat completions format. Supports tool definiti
 | `gemini-3.0-flash` | Fast |
 | `gemini-3.0-flash-thinking` | Flash with chain-of-thought |
 
+## Configuration
+
+All configuration is done via environment variables in `.env`:
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `GEMINI_PSID` | `__Secure-1PSID` cookie from Chrome | (required) |
+| `GEMINI_PSIDTS` | `__Secure-1PSIDTS` cookie from Chrome | (required) |
+| `SERVER_HOST` | Server bind address | `0.0.0.0` |
+| `SERVER_PORT` | Server port | `6969` |
+| `PROXY_URL` | HTTP proxy URL | (empty) |
+
 ## Project Structure
 
 ```
 Gemini_LocalAPI/
 ├── main.py                    # Entry point
-├── config.conf                # Your cookies (gitignored)
-├── example.config.conf        # Config template
+├── .env                       # Your cookies (gitignored)
+├── .env.example               # Config template
 ├── requirements.txt
 └── app/
     ├── config.py              # Config loader

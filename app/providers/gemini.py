@@ -24,7 +24,7 @@ class GeminiProvider(BaseProvider):
         if not GeminiCookies.is_configured():
             raise RuntimeError(
                 "Gemini cookies not configured. "
-                "Set PSID and PSIDTS in config.conf."
+                "Set GEMINI_PSID and GEMINI_PSIDTS in .env"
             )
         proxy = ProxyConfig.url or None
         self._client = GeminiClient(
